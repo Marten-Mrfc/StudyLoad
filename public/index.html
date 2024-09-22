@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gebruikersdata</title>
+    <link href="/styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        flicker: 'flicker 1s infinite',
+                    },
+                    keyframes: {
+                        flicker: {
+                            '0%, 100%': { color: '#f56565' },
+                            '50%': { color: '#ffffff' },
+                        },
+                    },
+                },
+            },
+        }
+      </script>
+    <style>
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-content {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+    <nav class="bg-blue-500 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-white text-lg font-bold">StudyLoad</h1>
+            <div class="relative dropdown">
+                <button class="bg-blue-600 text-white rounded p-2">
+                    Account
+                </button>
+                <div class="dropdown-content absolute bg-white shadow-lg rounded mt-2 z-10">
+                    <div class="p-4">
+                        <h2 class="font-semibold">Gebruikersinformatie</h2>
+                        <div id="userInfo" class="text-gray-700"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-4">
+        <h1 id="loginTitle" class="text-2xl font-bold mb-6 text-center">Inloggen</h1>
+        <form id="loginForm" class="mb-4">
+            <input type="email" id="email" placeholder="Email" required class="border border-gray-300 rounded p-2 mb-4 w-full">
+            <input type="password" id="password" placeholder="Wachtwoord" required class="border border-gray-300 rounded p-2 mb-4 w-full">
+            <button type="submit" class="bg-blue-500 text-white rounded p-2 w-full hover:bg-blue-600 transition">Inloggen</button>
+        </form>
+        <p class="text-red-500 animate-flicker" id="errors"></p>
+        <div id="result" class="mt-4 text-gray-700"></div>
+        <button id="logoutButton" class="bg-red-500 text-white rounded p-2 mt-4 hidden">Uitloggen</button>
+    </div>
+
+    <script>
+        async function checkAuth() {
+            console.log(document.cookie);
+            const emailCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('email='));
+            const tokenCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('authToken=')); 
+            
+            if (emailCookie && tokenCookie) {
+                const email = emailCookie.split('=')[1]; // Get the email from the cookie
+                const token = tokenCookie.split('=')[1]; // Get the token from the cookie
+        
+                // Set email and password fields
+                document.getElementById('email').value = email.replace('%40', '@');
+                document.getElementById('password').value = ''; // Clear password for security
+                document.getElementById('errors').innerHTML = 'Logging in via cookies';
+        
+                const response = await fetch('/api/getUserData', {
+                    method: 'GET',
+                    credentials: 'include' // Include cookies in the request
+                });
+        
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('errors').style.display = 'none'; // Hide login form
+                    document.getElementById('loginTitle').style.display = 'none'; // Hide login title
+                    document.getElementById('loginForm').style.display = 'none'; // Hide login form
+                    document.getElementById('result').innerHTML = createCollapsibleHTML(data);
+                    document.getElementById('userInfo').innerHTML = createUserInfoHTML(data); // Show user info in navbar
+                    document.getElementById('logoutButton').classList.remove('hidden'); // Show logout button
+                }
+            } else {
+                console.log('Not logged in');
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+        
+            const response = await fetch('/api/getUserData', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+                credentials: 'include' 
+            });
+        
+            const data = await response.json();
+            const resultDiv = document.getElementById('result');
+            const errorsDiv = document.getElementById('errors');
+        
+            if (response.ok) {
+                document.getElementById('loginTitle').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'none';
+                resultDiv.innerHTML = createCollapsibleHTML(data);
+                document.getElementById('userInfo').innerHTML = createUserInfoHTML(data);
+                document.getElementById('logoutButton').classList.remove('hidden');
+                errorsDiv.innerHTML = ''; // Clear previous errors
+            } else {
+                errorsDiv.innerHTML = data.error || 'Er is een onbekende fout opgetreden'; // Display error message
+            }
+        });
+
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include' // Include cookies in the request
+            });
+            location.reload(); // Reload the page to show the login form again
+        });
+
+        function createCollapsibleHTML(data) {
+            let html = '';
+
+            // Sections for categorizing the data
+            const sections = {
+                "Boeken": [],
+            };
+
+            // Categorizing data into sections
+            for (const key in data) {
+                if (Array.isArray(data[key])) {
+                    if (key === "books") {
+                        sections["Boeken"].push(`<h2 class="font-semibold text-lg mb-2"></h2><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">`);
+                        data[key].forEach(book => {
+                            sections["Boeken"].push(`
+                                <div class="bg-gray-50 border rounded p-4 mb-2 shadow hover:shadow-lg transition">
+                                    <img src="${book.subject.icon_url}" alt="${book.subject_name}" class="w-12 h-12 mb-2">
+                                    <h3 class="font-semibold text-lg">${book.name}</h3>
+                                    <p class="text-sm text-gray-600">Onderwerp: ${book.subject_name}</p>
+                                    <p class="text-sm text-gray-600">Editie: ${book.edition_display}</p>
+                                    <p class="text-sm text-gray-600">Niveau: ${book.book_grade_display}</p>
+                                </div>
+                            `);
+                        });
+                        sections["Boeken"].push(`</div>`);
+                    }
+                }
+            }
+
+            // Constructing the HTML with sections
+            for (const section in sections) {
+                if (sections[section].length > 0) {
+                    html += `<div class="my-4 p-4 bg-gray-100 rounded-lg shadow"><h2 class="font-semibold text-lg mb-2">${section}</h2><div>${sections[section].join('')}</div></div>`;
+                }
+            }
+
+            return html;
+        }
+
+        function createUserInfoHTML(data) {
+            let html = '';
+            // Adding user information to the dropdown
+            html += `<div class="mb-1"><span class="text-blue-500">Email:</span> <span class="text-gray-700">${data.email}</span></div>`;
+            html += `<div class="mb-1"><span class="text-blue-500">Naam:</span> <span class="text-gray-700">${data.full_name}</span></div>`;
+            html += `<div class="mb-1"><span class="text-blue-500">Rol:</span> <span class="text-gray-700">${data.role_name}</span></div>`;
+            return html;
+        }
+
+        // Call checkAuth on page load
+        window.onload = checkAuth;
+    </script>
+</body>
+</html>

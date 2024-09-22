@@ -1,0 +1,23 @@
+{
+    "name": "studygo-data-fetcher",
+    "version": "1.0.0",
+    "description": "A Node.js application to fetch user data from the StudyGo API.",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "nodemon --watch public --watch src -e html,js,css src/server.js ",
+        "build:css": "tailwindcss build public/styles.css -o public/output.css"
+    },
+    "dependencies": {
+        "body-parser": "^1.19.0",
+        "cookie-parser": "^1.4.6",
+        "express": "^4.17.1",
+        "js-cookie": "^3.0.5",
+        "node-fetch": "^2.6.7",
+        "nodemon": "^3.1.7"
+    },
+    "author": "Jouw Naam",
+    "license": "ISC",
+    "devDependencies": {
+        "tailwindcss": "^3.4.12"
+    }
+}
