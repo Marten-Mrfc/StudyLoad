@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gebruikersdata</title>
+    <link href="./styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .dropdown-content {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+    <nav class="bg-blue-500 p-4">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-white text-lg font-bold">Mijn App</h1>
+            <div class="relative dropdown">
+                <button class="bg-blue-600 text-white rounded p-2">Account</button>
+                <div class="dropdown-content absolute bg-white shadow-lg rounded mt-2 z-10">
+                    <div class="p-4 w-full">
+                        <h2 class="font-semibold">Gebruikersinformatie</h2>
+                        <div id="userInfo" class="text-gray-700"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-6xl mx-auto mt-4">
+        <h1 id="loginTitle" class="text-2xl font-bold mb-6 text-center">Inloggen</h1>
+        <form id="loginForm" class="mb-4">
+            <input type="email" id="email" placeholder="Email" required class="border border-gray-300 rounded p-2 mb-4 w-full">
+            <input type="password" id="password" placeholder="Wachtwoord" required class="border border-gray-300 rounded p-2 mb-4 w-full">
+            <button type="submit" class="bg-blue-500 text-white rounded p-2 w-full hover:bg-blue-600 transition">Inloggen</button>
+        </form>
+        <div id="result" class="mt-4 text-gray-700"></div>
+    </div>
+
+    <script src="./scripts/api.js"></script>
+    <script src="./scripts/main.js"></script>
+</body>
+</html>
